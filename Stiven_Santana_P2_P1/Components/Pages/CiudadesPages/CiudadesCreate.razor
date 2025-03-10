@@ -1,0 +1,79 @@
+﻿@page "/Ciudades/Create"
+@using Stiven_Santana_P2_P1.Models
+@using Stiven_Santana_P2_P1.Services
+@inject CiudadesService CiudadesService
+
+<div class="card">
+    <div class="card-header text-white bg-primary text-center">
+        <h3><strong>Registro de Ciudades</strong></h3>
+    </div>
+    <div class="card-body">
+        <EditForm Model="Ciudad" OnValidSubmit="Guardar" FormName="CiudadForm">
+            <DataAnnotationsValidator />
+
+            @*Id y Nombre*@
+            <div class="mb-3 d-flex">
+                <div class="me-3">
+                    <label for="Id" class="form-label"><strong>Id:</strong></label>
+                    <InputNumber id="Id" class="form-control bg-light" @bind-Value="Ciudad.Id" readonly />
+                </div>
+                <div>
+                    <label for="Nombre" class="form-label"><strong>Nombre:</strong></label>
+                    <InputText id="Nombre" class="form-control" @bind-Value="Ciudad.Nombre" />
+                </div>
+            </div>
+
+            @*Mpnto*@
+            <div class="mb-3">
+                <label for="Mpnto" class="form-label"><strong>Monto:</strong></label>
+                <InputNumber id="Mpnto" class="form-control" @bind-Value="Ciudad.Mpnto" />
+            </div>
+
+            @*Botones*@
+            <div class="d-flex justify-content-center">
+                <button type="button" class="btn btn-primary me-2" @onclick="Nuevo">Nuevo</button>
+                <button type="submit" class="btn btn-success me-2">Guardar</button>
+                <button type="button" class="btn btn-danger">← Volver</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@if (message != null)
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    public Ciudades Ciudad { get; set; } = new Ciudades();
+    public string message = string.Empty;
+
+    [Parameter]
+    public int CiudadId { get; set; } = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (CiudadId > 0)
+        {
+            var ciudadBuscada = await CiudadesService.Buscar(CiudadId);
+            Ciudad = ciudadBuscada ?? new Ciudades();
+        }
+        else
+        {
+            Ciudad = new Ciudades();
+        }
+        await base.OnInitializedAsync();
+    }
+
+    public void Nuevo()
+    {
+        Ciudad = new Ciudades();
+        message = string.Empty;
+    }
+
+    public async Task Guardar()
+    {
+        var guardo = await CiudadesService.Guardar(Ciudad);
+        if (guardo) Nuevo();
+    }
+}
