@@ -1,0 +1,61 @@
+﻿@page "/Ciudades/Index"
+@using Stiven_Santana_P2_P1.Models
+@using Stiven_Santana_P2_P1.Service
+@inject CiudadesService CiudadesService
+@inject NavigationManager NavManager
+@rendermode InteractiveServer 
+
+<div class="card">
+    <div class="card-header text-white bg-primary text-center">
+        <h3><strong>Consulta de Ciudades</strong></h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3 text-end">
+            <button class="btn btn-primary" @onclick="GotoCreate">Crear</button>
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Fecha</th>
+                    <th>Asignatura</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ciudad in ListaCiudades)
+                {
+                    <tr>
+                        <td>@ciudad.Id</td>
+                        <td>@ciudad.Fecha.ToShortDateString()</td>
+                        <td>@ciudad.Asignatura</td>
+                        <td>@(ciudad.Monto.ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="text-end mt-3">
+            <h4>Total: @(ListaCiudades.Sum(c => c.Monto).ToString("N2"))</h4>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Encuestas> ListaCiudades { get; set; } = new();
+
+    // Suma total de la columna Monto
+    private decimal TotalMonto => ListaCiudades.Sum(c => c.Detalles.Sum(c => c.Monto));
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Se cargan todos los registros automáticamente al iniciar
+        ListaCiudades = await CiudadesService.ObtenerTodasAsync();
+    }
+
+    private void GotoCreate()
+    {
+        NavManager.NavigateTo("/Ciudades/Create");
+    }
+}
