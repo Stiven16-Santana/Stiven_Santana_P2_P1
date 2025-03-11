@@ -7,6 +7,8 @@ namespace Stiven_Santana_P2_P1.DAL
     {
         public Contexto(DbContextOptions<Contexto> options) : base(options) { }
 
-        public DbSet<Ciudades> Ciudades { get; set; }
+        public DbSet<Encuestas> Ciudades { get; set; }
+        public DbSet<Ciudades> DetalleCiudades { get; set; }
+
     }
 }
