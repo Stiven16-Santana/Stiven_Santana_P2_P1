@@ -1,35 +1,76 @@
 ﻿@page "/Ciudades/Create"
 @using Stiven_Santana_P2_P1.Models
-@using Stiven_Santana_P2_P1.Services
+@using Stiven_Santana_P2_P1.Service
 @inject CiudadesService CiudadesService
+@rendermode InteractiveServer
 
 <div class="card">
     <div class="card-header text-white bg-primary text-center">
         <h3><strong>Registro de Ciudades</strong></h3>
     </div>
     <div class="card-body">
-        <EditForm Model="Ciudad" OnValidSubmit="Guardar" FormName="CiudadForm">
+        <EditForm Model="Encuesta" OnValidSubmit="Guardar" FormName="CiudadForm">
             <DataAnnotationsValidator />
 
-            @*Id y Nombre*@
+            <!-- Campos principales -->
             <div class="mb-3 d-flex">
                 <div class="me-3">
                     <label for="Id" class="form-label"><strong>Id:</strong></label>
-                    <InputNumber id="Id" class="form-control bg-light" @bind-Value="Ciudad.Id" readonly />
+                    <InputNumber id="Id" class="form-control bg-light" @bind-Value="Encuesta.Id" readonly />
                 </div>
                 <div>
-                    <label for="Nombre" class="form-label"><strong>Nombre:</strong></label>
-                    <InputText id="Nombre" class="form-control" @bind-Value="Ciudad.Nombre" />
+                    <label for="Fecha" class="form-label"><strong>Fecha:</strong></label>
+                    <InputDate id="Fecha" class="form-control" @bind-Value="Encuesta.Fecha" />
                 </div>
             </div>
-
-            @*Mpnto*@
             <div class="mb-3">
-                <label for="Mpnto" class="form-label"><strong>Monto:</strong></label>
-                <InputNumber id="Mpnto" class="form-control" @bind-Value="Ciudad.Mpnto" />
+                <label for="Asignatura" class="form-label"><strong>Asignatura:</strong></label>
+                <InputText id="Asignatura" class="form-control" @bind-Value="Encuesta.Asignatura" />
             </div>
 
-            @*Botones*@
+            <!-- Sección de Detalles con borde verde -->
+            <div class="card border-success p-3 mb-3">
+                <h5><strong>Detalle</strong></h5>
+                <div class="mb-3 d-flex">
+                    <div class="me-3">
+                        <label for="DetalleCiudad" class="form-label"><strong>Ciudad:</strong></label>
+                        @* <InputText id="DetalleCiudad" class="form-control" @bind-Value="DetalleCiudad.Nombre" /> *@
+                        <InputSelect id="DetalleCiudad" class="form-select" @bind-value="DetalleCiudad.Nombre">
+                            <option value="Santo Domingo">Santo Domingo</option>
+                            <option value="Santiago">Santiago</option>
+                            <option value="La Romana">La Romana</option>
+                        </InputSelect>
+                    </div>
+                    <div>
+                        <label for="DetalleMonto" class="form-label"><strong>Monto de la Cuota:</strong></label>
+                        <InputNumber id="DetalleMonto" class="form-control" @bind-Value="DetalleCiudad.Monto" />
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" @onclick="(() => AgregarDetalle())">Agregar</button>
+
+                <!-- Tabla de detalles -->
+                <table class="table table-bordered table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Ciudad</th>
+                            <th>Monto</th>
+                            Encuesta          </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detalle in Encuesta.Detalles)
+                        {
+                            <tr>
+                                <td>@detalle.Nombre</td>
+                                <td>@detalle.Monto.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <h5 class="text-start"> @(Encuesta.Detalles.Count)</h5>
+                <h5 class="text-end">Total: @(Encuesta.Detalles.Sum(m => m.Monto).ToString("N2"))</h5>
+            </div>
+
+            <!-- Botones de acción -->
             <div class="d-flex justify-content-center">
                 <button type="button" class="btn btn-primary me-2" @onclick="Nuevo">Nuevo</button>
                 <button type="submit" class="btn btn-success me-2">Guardar</button>
@@ -39,13 +80,16 @@
     </div>
 </div>
 
-@if (message != null)
+@if (!string.IsNullOrEmpty(message))
 {
     <div class="alert alert-info mt-3">@message</div>
 }
 
 @code {
-    public Ciudades Ciudad { get; set; } = new Ciudades();
+    public Encuestas Encuesta { get; set; }= new Encuestas();
+    public Ciudades DetalleCiudad { get; set; } = new Ciudades();
+    public List<Ciudades> Detalles { get; set; } = new List<Ciudades>();
+    public decimal TotalMonto => Detalles.Sum(d => d.Monto);
     public string message = string.Empty;
 
     [Parameter]
@@ -56,24 +100,51 @@
         if (CiudadId > 0)
         {
             var ciudadBuscada = await CiudadesService.Buscar(CiudadId);
-            Ciudad = ciudadBuscada ?? new Ciudades();
+            Encuesta = ciudadBuscada ?? new Encuestas();
+            // Si la entidad Ciudades tiene detalles relacionados y se cargan, se pueden asignar:
+            // Detalles = Ciudad.Detalles;
         }
         else
         {
-            Ciudad = new Ciudades();
+            Encuesta = new Encuestas();
         }
         await base.OnInitializedAsync();
     }
 
     public void Nuevo()
     {
-        Ciudad = new Ciudades();
+        Encuesta = new Encuestas();
+        Detalles.Clear();
         message = string.Empty;
     }
 
     public async Task Guardar()
     {
-        var guardo = await CiudadesService.Guardar(Ciudad);
-        if (guardo) Nuevo();
+        // Si deseas relacionar los detalles con la ciudad antes de guardar, asigna:
+        // Ciudad.Detalles = Detalles;
+        Encuesta.Monto = Encuesta.Detalles.Sum(d => d.Monto);
+        var guardo = await CiudadesService.Guardar(Encuesta);
+        if (guardo)
+        {
+            message = "Guardado correctamente.";
+            Nuevo();
+        }
+    }
+
+    public void AgregarDetalle()
+    {
+        if (!string.IsNullOrWhiteSpace(DetalleCiudad.Nombre) && DetalleCiudad.Monto > 0)
+        {
+            Encuesta.Detalles.Add(new Ciudades
+                {
+                    Nombre = DetalleCiudad.Nombre,
+                    Monto = DetalleCiudad.Monto
+                });
+            StateHasChanged();
+        }
+        else
+        {
+            message = "Ingresa valores válidos en el detalle.";
+        }
     }
 }
